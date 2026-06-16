@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Calorie Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .progress-section {
+            margin-bottom: 25px;
+        }
+
+        .progress-bar-container {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .calories-remaining {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #667eea;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .add-food-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+
+        .food-list {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .food-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .food-info {
+            flex: 1;
+        }
+
+        .food-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .food-calories {
+            color: #667eea;
+            font-size: 0.9rem;
+        }
+
+        .settings-toggle {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .settings-panel {
+            display: none;
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .settings-panel.active {
+            display: block;
+        }
+
+        .settings-panel label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .settings-panel input {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+        }
+
+        .date-display {
+            text-align: center;
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍎 Daily Calorie Tracker</h1>
+        
+        <div class="date-display" id="dateDisplay"></div>
+
+        <div class="progress-section">
+            <div class="stats">
+                <span id="consumedDisplay">0 / 2000</span>
+                <span id="goalDisplay">Goal: 2000</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%">0%</div>
+            </div>
+        </div>
+
+        <div class="calories-remaining" id="remainingDisplay">
+            Calories Remaining: 2000
+        </div>
+
+        <div class="settings-toggle">
+            <button class="btn btn-secondary" onclick="toggleSettings()">⚙️ Settings</button>
+        </div>
+
+        <div class="settings-panel" id="settingsPanel">
+            <label for="dailyGoal">Daily Calorie Goal:</label>
+            <input type="number" id="dailyGoal" value="2000" min="500" max="10000">
+            <button class="btn btn-primary" onclick="saveGoal()">Save Goal</button>
+        </div>
+
+        <form class="add-food-form" onsubmit="addFood(event)">
+            <input type="text" id="foodName" placeholder="Food name (e.g., Apple)" required>
+            <input type="number" id="foodCalories" placeholder="Calories" min="1" required>
+            <button type="submit" class="btn btn-primary">+ Add Food</button>
+        </form>
+
+        <ul class="food-list" id="foodList">
+            <!-- Food items will be added here -->
+        </ul>
+    </div>
+
+    <script>
+        // State management
+        let state = {
+            dailyGoal: 2000,
+            foods: [],
+            lastDate: null
+        };
+
+        // Initialize app
+        function init() {
+            loadFromStorage();
+            checkNewDay();
+            render();
+            updateDateDisplay();
+        }
+
+        // Load data from localStorage
+        function loadFromStorage() {
+            const saved = localStorage.getItem('calorieTracker');
+            if (saved) {
+                state = JSON.parse(saved);
+            }
+        }
+
+        // Save data to localStorage
+        function saveToStorage() {
+            localStorage.setItem('calorieTracker', JSON.stringify(state));
+        }
+
+        // Check if it's a new day
+        function checkNewDay() {
+            const today = new Date().toDateString();
+            if (state.lastDate !== today) {
+                state.foods = [];
+                state.lastDate = today;
+                saveToStorage();
+            }
+        }
+
+        // Update date display
+        function updateDateDisplay() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US', options);
+        }
+
+        // Toggle settings panel
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('active');
+            document.getElementById('dailyGoal').value = state.dailyGoal;
+        }
+
+        // Save daily goal
+        function saveGoal() {
+            const goal = parseInt(document.getElementById('dailyGoal').value);
+            if (goal && goal >= 500 && goal <= 10000) {
+                state.dailyGoal = goal;
+                saveToStorage();
+                render();
+                toggleSettings();
+            } else {
+                alert('Please enter a valid goal between 500 and 10000 calories');
+            }
+        }
+
+        // Add food entry
+        function addFood(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('foodName').value.trim();
+            const calories = parseInt(document.getElementById('foodCalories').value);
+
+            if (name && calories > 0) {
+                state.foods.unshift({
+                    id: Date.now(),
+                    name: name,
+                    calories: calories,
+                    timestamp: new Date().toISOString()
+                });
+
+                saveToStorage();
+                render();
+
+                // Clear form
+                document.getElementById('foodName').value = '';
+                document.getElementById('foodCalories').value = '';
+            }
+        }
+
+        // Delete food entry
+        function deleteFood(id) {
+            state.foods = state.foods.filter(food => food.id !== id);
+            saveToStorage();
+            render();
+        }
+
+        // Calculate total calories
+        function getTotalCalories() {
+            return state.foods.reduce((sum, food) => sum + food.calories, 0);
+        }
+
+        // Render the UI
+        function render() {
+            const totalCalories = getTotalCalories();
+            const remaining = state.dailyGoal - totalCalories;
+            const percentage = Math.min((totalCalories / state.dailyGoal) * 100, 100);
+
+            // Update progress bar
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = percentage + '%';
+            progressBar.textContent = Math.round(percentage) + '%';
+
+            // Update stats
+            document.getElementById('consumedDisplay').textContent = `${totalCalories} / ${state.dailyGoal}`;
+            document.getElementById('goalDisplay').textContent = `Goal: ${state.dailyGoal}`;
+
+            // Update remaining calories
+            const remainingDisplay = document.getElementById('remainingDisplay');
+            remainingDisplay.textContent = `Calories Remaining: ${remaining}`;
+            
+            if (remaining < 0) {
+                remainingDisplay.style.color = '#ff6b6b';
+                remainingDisplay.style.background = '#fff0f0';
+            } else if (remaining < 500) {
+                remainingDisplay.style.color = '#f39c12';
+                remainingDisplay.style.background = '#fff9e6';
+            } else {
+                remainingDisplay.style.color = '#667eea';
+                remainingDisplay.style.background = '#f8f9ff';
+            }
+
+            // Update food list
+            const foodList = document.getElementById('foodList');
+            if (state.foods.length === 0) {
+                foodList.innerHTML = `
+                    <li class="empty-state">
+                        <p>No food entries yet today</p>
+                        <p>Add your first meal above!</p>
+                    </li>
+                `;
+            } else {
+                foodList.innerHTML = state.foods.map(food => `
+                    <li class="food-item">
+                        <div class="food-info">
+                            <div class="food-name">${escapeHtml(food.name)}</div>
+                            <div class="food-calories">${food.calories} cal</div>
+                        </div>
+                        <button class="btn btn-danger" onclick="deleteFood(${food.id})">Delete</button>
+                    </li>
+                `).join('');
+            }
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize on page load
+        init();
+    </script>
+</body>
+</html>
