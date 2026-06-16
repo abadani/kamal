@@ -233,7 +233,7 @@ function handleScroll() {
 }
 
 // ============================================
-// Booking Modal Functions
+// Booking Modal Functions (Cal.com Iframe)
 // ============================================
 window.openBookingModal = function() {
   bookingModal.classList.remove('hidden');
@@ -244,9 +244,6 @@ window.openBookingModal = function() {
     modalContent.classList.remove('opacity-0', 'scale-95');
     modalContent.classList.add('opacity-100', 'scale-100');
   }, 10);
-  
-  // Initialize booking form
-  initializeBookingForm();
 };
 
 window.closeBookingModal = function() {
@@ -257,472 +254,51 @@ window.closeBookingModal = function() {
   
   setTimeout(() => {
     bookingModal.classList.add('hidden');
-    resetBookingForm();
+    // Reset iframe for fresh load next time
+    resetIframe();
   }, 300);
 };
 
-function initializeBookingForm() {
-  currentStep = 1;
-  selectedServices = [];
-  selectedTeamMember = null;
-  selectedDate = null;
-  selectedTime = null;
+// Handle iframe load event - called from HTML
+window.onIframeLoad = function() {
+  const iframe = document.getElementById('cal-iframe');
+  const loader = document.getElementById('iframe-loader');
   
-  renderBookingServices();
-  renderBookingTeam();
-  updateStepUI();
-}
-
-function renderBookingServices() {
-  const container = document.getElementById('booking-services');
-  container.innerHTML = '';
-  
-  // Group services by category
-  Object.entries(salonConfig.services).forEach(([category, services]) => {
-    const categoryDiv = document.createElement('div');
-    categoryDiv.className = 'mb-6';
-    categoryDiv.innerHTML = `<h5 class="font-semibold text-lg mb-3 capitalize">${category}</h5>`;
-    
-    const servicesDiv = document.createElement('div');
-    servicesDiv.className = 'space-y-3';
-    
-    services.forEach(service => {
-      const label = document.createElement('label');
-      label.className = 'flex items-center justify-between p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-salon-gold transition-colors';
-      
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.value = service.id;
-      checkbox.className = 'w-5 h-5 text-salon-gold rounded focus:ring-salon-gold';
-      checkbox.addEventListener('change', handleServiceSelection);
-      
-      label.innerHTML = `
-        <div class="flex items-center space-x-3">
-          ${checkbox.outerHTML}
-          <div>
-            <p class="font-medium">${service.name}</p>
-            <p class="text-sm text-gray-500">${service.duration} min</p>
-          </div>
-        </div>
-        <span class="text-salon-gold font-bold">$${service.price}</span>
-      `;
-      
-      // Re-attach checkbox reference after innerHTML
-      const actualCheckbox = label.querySelector('input[type="checkbox"]');
-      actualCheckbox.addEventListener('change', handleServiceSelection);
-      
-      servicesDiv.appendChild(label);
-    });
-    
-    categoryDiv.appendChild(servicesDiv);
-    container.appendChild(categoryDiv);
-  });
-  
-  updateBookingTotal();
-}
-
-function handleServiceSelection(e) {
-  const serviceId = e.target.value;
-  const isChecked = e.target.checked;
-  
-  if (isChecked) {
-    const service = getAllServices().find(s => s.id === serviceId);
-    if (service && !selectedServices.find(s => s.id === serviceId)) {
-      selectedServices.push(service);
-    }
-  } else {
-    selectedServices = selectedServices.filter(s => s.id !== serviceId);
+  // Fade out loader and fade in iframe
+  if (loader) {
+    loader.style.opacity = '0';
+    loader.style.transition = 'opacity 0.3s ease';
+    setTimeout(() => {
+      loader.style.display = 'none';
+    }, 300);
   }
   
-  updateBookingTotal();
-}
-
-function getAllServices() {
-  return Object.values(salonConfig.services).flat();
-}
-
-function updateBookingTotal() {
-  const total = selectedServices.reduce((sum, service) => sum + service.price, 0);
-  const duration = selectedServices.reduce((sum, service) => sum + service.duration, 0);
-  
-  document.getElementById('booking-total').textContent = `$${total}`;
-  document.getElementById('booking-duration').textContent = `Estimated duration: ${duration} minutes`;
-}
-
-function renderBookingTeam() {
-  const container = document.getElementById('booking-team');
-  container.innerHTML = '';
-  
-  salonConfig.team.forEach(member => {
-    const label = document.createElement('label');
-    label.className = 'flex items-center space-x-4 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-salon-gold transition-colors';
-    
-    const radio = document.createElement('input');
-    radio.type = 'radio';
-    radio.name = 'team-member';
-    radio.value = member.id;
-    radio.className = 'w-5 h-5 text-salon-gold focus:ring-salon-gold';
-    radio.addEventListener('change', () => {
-      selectedTeamMember = member;
-    });
-    
-    label.innerHTML = `
-      <div class="relative w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-        <img 
-          src="${member.image}" 
-          alt="${member.name}"
-          class="w-full h-full object-cover"
-          onerror="this.src='https://images.unsplash.com/photo-1580618672591-eb180b1a973f?w=200&q=80'"
-        />
-      </div>
-      <div>
-        <p class="font-semibold">${member.name}</p>
-        <p class="text-sm text-gray-500">${member.role}</p>
-      </div>
-    `;
-    
-    // Re-attach radio after innerHTML
-    const actualRadio = label.querySelector('input[type="radio"]');
-    actualRadio.addEventListener('change', () => {
-      selectedTeamMember = member;
-    });
-    
-    container.appendChild(label);
-  });
-}
-
-function renderTimeSlots() {
-  const container = document.getElementById('time-slots');
-  container.innerHTML = '';
-  
-  if (!selectedDate) {
-    container.innerHTML = '<p class="text-gray-500 col-span-full">Please select a date first</p>';
-    return;
-  }
-  
-  const date = new Date(selectedDate);
-  const dayName = date.toLocaleDateString('en-US', { weekday: 'lowercase' });
-  const hours = salonConfig.operatingHours[dayName];
-  
-  if (!hours) {
-    container.innerHTML = '<p class="text-gray-500 col-span-full">We are closed on this day</p>';
-    return;
-  }
-  
-  // Calculate available slots based on service duration
-  const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration, 0);
-  const slotInterval = 30; // 30-minute intervals
-  
-  for (let hour = hours.open; hour < hours.close; hour++) {
-    for (let minute = 0; minute < 60; minute += slotInterval) {
-      const timeValue = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      const displayTime = formatTimeSlot(hour, minute);
-      
-      // Check if there's enough time before closing
-      const slotEndMinutes = (hour * 60 + minute + totalDuration);
-      const closingMinutes = hours.close * 60;
-      
-      const isDisabled = slotEndMinutes > closingMinutes;
-      
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = `time-slot py-3 px-2 border-2 rounded-lg font-medium text-sm transition-all ${
-        isDisabled 
-          ? 'disabled' 
-          : selectedTime === timeValue
-            ? 'selected'
-            : 'border-gray-200 hover:border-salon-gold'
-      }`;
-      button.textContent = displayTime;
-      button.disabled = isDisabled;
-      
-      if (!isDisabled) {
-        button.addEventListener('click', () => {
-          selectedTime = timeValue;
-          renderTimeSlots();
-        });
-      }
-      
-      container.appendChild(button);
-    }
-  }
-}
-
-function formatTimeSlot(hour, minute) {
-  const ampm = hour >= 12 ? 'PM' : 'AM';
-  const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
-  const displayMinute = minute.toString().padStart(2, '0');
-  return `${displayHour}:${displayMinute} ${ampm}`;
-}
-
-function updateStepUI() {
-  // Hide all steps
-  document.querySelectorAll('.step-content').forEach(step => {
-    step.classList.add('hidden');
-  });
-  
-  // Show current step
-  const currentStepEl = document.getElementById(`step-${currentStep}`);
-  if (currentStepEl) {
-    currentStepEl.classList.remove('hidden');
-  }
-  
-  // Update progress indicators
-  document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
-    const stepNum = index + 1;
-    if (stepNum <= currentStep) {
-      indicator.classList.remove('bg-gray-200', 'text-gray-500');
-      indicator.classList.add('bg-salon-gold', 'text-white');
-    } else {
-      indicator.classList.add('bg-gray-200', 'text-gray-500');
-      indicator.classList.remove('bg-salon-gold', 'text-white');
-    }
-  });
-  
-  // Update step text colors
-  document.querySelectorAll('.step-text').forEach((text, index) => {
-    const stepNum = index + 1;
-    if (stepNum <= currentStep) {
-      text.classList.remove('text-gray-500');
-      text.classList.add('text-salon-gold');
-    } else {
-      text.classList.add('text-gray-500');
-      text.classList.remove('text-salon-gold');
-    }
-  });
-  
-  // Update navigation buttons
-  const prevBtn = document.getElementById('prev-step-btn');
-  const nextBtn = document.getElementById('next-step-btn');
-  
-  if (currentStep === 1) {
-    prevBtn.classList.add('hidden');
-  } else {
-    prevBtn.classList.remove('hidden');
-  }
-  
-  if (currentStep === 4) {
-    nextBtn.textContent = 'Confirm Booking';
-    updateBookingSummary();
-  } else if (currentStep === 5) {
-    nextBtn.classList.add('hidden');
-    prevBtn.classList.add('hidden');
-  } else {
-    nextBtn.textContent = 'Continue';
-    nextBtn.classList.remove('hidden');
-  }
-}
-
-function updateBookingSummary() {
-  const summaryContainer = document.getElementById('booking-summary');
-  const total = selectedServices.reduce((sum, s) => sum + s.price, 0);
-  const duration = selectedServices.reduce((sum, s) => sum + s.duration, 0);
-  
-  const servicesList = selectedServices.map(s => s.name).join(', ') || 'None selected';
-  const teamMemberName = selectedTeamMember ? selectedTeamMember.name : 'Any available professional';
-  const dateTime = selectedDate && selectedTime 
-    ? `${new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at ${formatTimeSlot(parseInt(selectedTime.split(':')[0]), parseInt(selectedTime.split(':')[1]))}`
-    : 'Not selected';
-  
-  summaryContainer.innerHTML = `
-    <div class="flex justify-between">
-      <span class="text-gray-600">Services:</span>
-      <span class="font-medium">${servicesList}</span>
-    </div>
-    <div class="flex justify-between">
-      <span class="text-gray-600">Stylist:</span>
-      <span class="font-medium">${teamMemberName}</span>
-    </div>
-    <div class="flex justify-between">
-      <span class="text-gray-600">Date & Time:</span>
-      <span class="font-medium">${dateTime}</span>
-    </div>
-    <div class="flex justify-between">
-      <span class="text-gray-600">Duration:</span>
-      <span class="font-medium">${duration} minutes</span>
-    </div>
-    <div class="flex justify-between pt-2 border-t border-gray-300 mt-2">
-      <span class="font-semibold">Total:</span>
-      <span class="font-bold text-salon-gold text-lg">$${total}</span>
-    </div>
-  `;
-}
-
-window.nextStep = function() {
-  // Validation
-  if (currentStep === 1 && selectedServices.length === 0) {
-    alert('Please select at least one service');
-    return;
-  }
-  
-  if (currentStep === 2) {
-    // Team member selection is optional (defaults to "any")
-  }
-  
-  if (currentStep === 3) {
-    if (!selectedDate || !selectedTime) {
-      alert('Please select both date and time');
-      return;
-    }
-  }
-  
-  if (currentStep === 4) {
-    if (!validateClientInfo()) {
-      return;
-    }
-    submitBooking();
-    return;
-  }
-  
-  currentStep++;
-  
-  // Initialize step-specific content
-  if (currentStep === 3) {
-    setupDatePicker();
-    renderTimeSlots();
-  }
-  
-  updateStepUI();
-};
-
-window.previousStep = function() {
-  if (currentStep > 1) {
-    currentStep--;
-    updateStepUI();
+  if (iframe) {
+    iframe.style.opacity = '1';
   }
 };
 
-function setupDatePicker() {
-  const dateInput = document.getElementById('booking-date');
-  const today = new Date();
-  const maxDate = new Date();
-  maxDate.setMonth(maxDate.getMonth() + 2); // Allow booking up to 2 months in advance
+// Reset iframe when modal closes
+function resetIframe() {
+  const iframe = document.getElementById('cal-iframe');
+  const loader = document.getElementById('iframe-loader');
   
-  dateInput.min = today.toISOString().split('T')[0];
-  dateInput.max = maxDate.toISOString().split('T')[0];
-  
-  dateInput.addEventListener('change', (e) => {
-    selectedDate = e.target.value;
-    selectedTime = null; // Reset time when date changes
-    renderTimeSlots();
-  });
-}
-
-function validateClientInfo() {
-  const name = document.getElementById('client-name').value.trim();
-  const phone = document.getElementById('client-phone').value.trim();
-  const email = document.getElementById('client-email').value.trim();
-  
-  if (!name || !phone || !email) {
-    alert('Please fill in all required fields');
-    return false;
+  if (iframe) {
+    // Reset opacity and src to trigger reload on next open
+    iframe.style.opacity = '0';
+    const currentSrc = iframe.src;
+    iframe.src = '';
+    // Restore src after a brief delay
+    setTimeout(() => {
+      iframe.src = currentSrc;
+    }, 50);
   }
   
-  // Basic email validation
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    alert('Please enter a valid email address');
-    return false;
+  if (loader) {
+    loader.style.display = 'flex';
+    loader.style.opacity = '1';
   }
-  
-  return true;
 }
 
-function submitBooking() {
-  const name = document.getElementById('client-name').value.trim();
-  const phone = document.getElementById('client-phone').value.trim();
-  const email = document.getElementById('client-email').value.trim();
-  const notes = document.getElementById('client-notes').value.trim();
-  
-  const bookingData = {
-    id: generateBookingId(),
-    services: selectedServices,
-    teamMember: selectedTeamMember,
-    date: selectedDate,
-    time: selectedTime,
-    client: {
-      name,
-      phone,
-      email,
-      notes
-    },
-    total: selectedServices.reduce((sum, s) => sum + s.price, 0),
-    duration: selectedServices.reduce((sum, s) => sum + s.duration, 0),
-    createdAt: new Date().toISOString()
-  };
-  
-  // Store in localStorage
-  const existingBookings = JSON.parse(localStorage.getItem('salonBookings') || '[]');
-  existingBookings.push(bookingData);
-  localStorage.setItem('salonBookings', JSON.stringify(existingBookings));
-  
-  // Log to console
-  console.log('🎉 New Booking Created!');
-  console.log(JSON.stringify(bookingData, null, 2));
-  
-  // Show confirmation
-  showConfirmation(bookingData);
-}
-
-function generateBookingId() {
-  return 'BK-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
-}
-
-function showConfirmation(bookingData) {
-  currentStep = 5;
-  updateStepUI();
-  
-  const detailsContainer = document.getElementById('confirmation-details');
-  const timeDisplay = formatTimeSlot(parseInt(bookingData.time.split(':')[0]), parseInt(bookingData.time.split(':')[1]));
-  const dateDisplay = new Date(bookingData.date).toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    month: 'long', 
-    day: 'numeric' 
-  });
-  
-  detailsContainer.innerHTML = `
-    <div class="space-y-3">
-      <div class="flex justify-between">
-        <span class="text-gray-600">Confirmation #:</span>
-        <span class="font-mono font-medium">${bookingData.id}</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="text-gray-600">Date:</span>
-        <span class="font-medium">${dateDisplay}</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="text-gray-600">Time:</span>
-        <span class="font-medium">${timeDisplay}</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="text-gray-600">Services:</span>
-        <span class="font-medium">${bookingData.services.map(s => s.name).join(', ')}</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="text-gray-600">Stylist:</span>
-        <span class="font-medium">${bookingData.teamMember ? bookingData.teamMember.name : 'Any available professional'}</span>
-      </div>
-      <div class="flex justify-between pt-3 border-t border-gray-300">
-        <span class="font-semibold">Total:</span>
-        <span class="font-bold text-salon-gold text-lg">$${bookingData.total}</span>
-      </div>
-    </div>
-  `;
-}
-
-function resetBookingForm() {
-  currentStep = 1;
-  selectedServices = [];
-  selectedTeamMember = null;
-  selectedDate = null;
-  selectedTime = null;
-  
-  document.getElementById('booking-form').reset();
-}
-
-// Make functions globally accessible
-window.openBookingModal = openBookingModal;
-window.closeBookingModal = closeBookingModal;
-window.nextStep = nextStep;
-window.previousStep = previousStep;
+// Make toggleMobileMenu globally accessible
 window.toggleMobileMenu = toggleMobileMenu;
