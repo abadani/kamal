@@ -1,12 +1,34 @@
-```
+```gitignore
 # Dependencies
 node_modules/
 
-# Editor/IDE files
-.vscode/
+# Build artifacts
+dist/
+build/
+*.min.js
+*.min.css
+*.bundle.js
 
-# Environment files
+# Logs and temp files
+*.log
+*.tmp
+
+# Environment variables
 .env
 .env.local
 *.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+```
+
+Wait, let me reconsider. The modified files are only `index.html` and `app.js`, which are source files. There are no build artifacts, dependency directories, or temporary files in the change list that need to be ignored according to the rules.
+
+```gitignore
+
 ```

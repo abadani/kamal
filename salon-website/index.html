@@ -592,7 +592,7 @@
     ></div>
     
     <!-- Modal Content -->
-    <div class="modal-content absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl opacity-0 scale-95">
+    <div class="modal-content absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-5xl max-h-[90vh] overflow-hidden bg-white rounded-2xl shadow-2xl opacity-0 scale-95">
       <!-- Modal Header -->
       <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
         <h3 class="font-display text-2xl font-bold text-salon-charcoal">Book Your Appointment</h3>
@@ -607,190 +607,22 @@
         </button>
       </div>
       
-      <!-- Modal Body -->
-      <div class="p-6">
-        <!-- Progress Steps -->
-        <div class="flex items-center justify-between mb-8">
-          <div class="flex items-center space-x-2">
-            <div class="step-indicator w-8 h-8 rounded-full bg-salon-gold text-white flex items-center justify-center font-semibold text-sm">1</div>
-            <span class="step-text text-sm font-medium text-salon-gold">Service</span>
-          </div>
-          <div class="flex-1 mx-4 h-px bg-gray-200"></div>
-          <div class="flex items-center space-x-2">
-            <div class="step-indicator w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-semibold text-sm">2</div>
-            <span class="step-text text-sm font-medium text-gray-500">Stylist</span>
-          </div>
-          <div class="flex-1 mx-4 h-px bg-gray-200"></div>
-          <div class="flex items-center space-x-2">
-            <div class="step-indicator w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-semibold text-sm">3</div>
-            <span class="step-text text-sm font-medium text-gray-500">Date & Time</span>
-          </div>
-          <div class="flex-1 mx-4 h-px bg-gray-200"></div>
-          <div class="flex items-center space-x-2">
-            <div class="step-indicator w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-semibold text-sm">4</div>
-            <span class="step-text text-sm font-medium text-gray-500">Your Info</span>
-          </div>
+      <!-- Modal Body - Cal.com Iframe -->
+      <div class="relative w-full" style="height: calc(90vh - 80px); min-height: 600px;">
+        <!-- Loading State -->
+        <div id="iframe-loader" class="absolute inset-0 flex flex-col items-center justify-center bg-salon-cream">
+          <div class="spinner mb-4"></div>
+          <p class="text-gray-600 font-medium">Loading booking calendar...</p>
         </div>
         
-        <!-- Booking Form -->
-        <form id="booking-form" class="space-y-6">
-          <!-- Step 1: Select Service -->
-          <div id="step-1" class="step-content">
-            <h4 class="font-display text-xl font-semibold mb-4">Select Your Services</h4>
-            <div id="booking-services" class="space-y-4">
-              <!-- Services will be loaded dynamically -->
-            </div>
-            <div class="mt-6 p-4 bg-salon-cream rounded-lg">
-              <div class="flex justify-between items-center">
-                <span class="font-semibold">Total:</span>
-                <span id="booking-total" class="text-2xl font-bold text-salon-gold">$0</span>
-              </div>
-              <p id="booking-duration" class="text-sm text-gray-600 mt-1">Estimated duration: 0 minutes</p>
-            </div>
-          </div>
-          
-          <!-- Step 2: Select Team Member -->
-          <div id="step-2" class="step-content hidden">
-            <h4 class="font-display text-xl font-semibold mb-4">Choose Your Stylist</h4>
-            <div id="booking-team" class="grid md:grid-cols-2 gap-4">
-              <!-- Team members will be loaded dynamically -->
-            </div>
-            <div class="mt-4">
-              <label class="flex items-center space-x-3 p-4 border-2 border-salon-gold rounded-lg cursor-pointer bg-salon-cream/50">
-                <input type="radio" name="team-member" value="any" checked class="w-4 h-4 text-salon-gold">
-                <span class="font-medium">Any available professional</span>
-              </label>
-            </div>
-          </div>
-          
-          <!-- Step 3: Date & Time -->
-          <div id="step-3" class="step-content hidden">
-            <h4 class="font-display text-xl font-semibold mb-4">Select Date & Time</h4>
-            
-            <!-- Date Picker -->
-            <div class="mb-6">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Select Date</label>
-              <input 
-                type="date" 
-                id="booking-date"
-                class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-salon-gold focus:border-salon-gold"
-                required
-              />
-            </div>
-            
-            <!-- Time Slots -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Available Time Slots</label>
-              <div id="time-slots" class="grid grid-cols-3 md:grid-cols-4 gap-3">
-                <!-- Time slots will be generated dynamically -->
-              </div>
-              <p class="text-xs text-gray-500 mt-2">* Based on operating hours and selected service duration</p>
-            </div>
-          </div>
-          
-          <!-- Step 4: Client Information -->
-          <div id="step-4" class="step-content hidden">
-            <h4 class="font-display text-xl font-semibold mb-4">Your Information</h4>
-            
-            <div class="grid md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
-                <input 
-                  type="text" 
-                  id="client-name"
-                  class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-salon-gold focus:border-salon-gold"
-                  required
-                  placeholder="John Doe"
-                />
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
-                <input 
-                  type="tel" 
-                  id="client-phone"
-                  class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-salon-gold focus:border-salon-gold"
-                  required
-                  placeholder="(555) 123-4567"
-                />
-              </div>
-            </div>
-            
-            <div class="mt-4">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
-              <input 
-                type="email" 
-                id="client-email"
-                class="form-input w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-salon-gold focus:border-salon-gold"
-                required
-                placeholder="john@example.com"
-              />
-            </div>
-            
-            <div class="mt-4">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Special Notes or Requests</label>
-              <textarea 
-                id="client-notes"
-                rows="4"
-                class="form-textarea w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-salon-gold focus:border-salon-gold"
-                placeholder="Any allergies, preferences, or special requests..."
-              ></textarea>
-            </div>
-            
-            <!-- Booking Summary -->
-            <div class="mt-6 p-6 bg-salon-cream rounded-lg">
-              <h5 class="font-semibold mb-4">Booking Summary</h5>
-              <div id="booking-summary" class="space-y-2 text-sm">
-                <!-- Summary will be populated dynamically -->
-              </div>
-            </div>
-          </div>
-          
-          <!-- Step 5: Confirmation -->
-          <div id="step-5" class="step-content hidden">
-            <div class="text-center py-8">
-              <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg class="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                </svg>
-              </div>
-              <h4 class="font-display text-2xl font-bold mb-4">Appointment Confirmed!</h4>
-              <p class="text-gray-600 mb-6">
-                Thank you for booking with us. We've sent a confirmation email with all the details.
-              </p>
-              <div id="confirmation-details" class="bg-salon-cream rounded-lg p-6 text-left mb-6">
-                <!-- Confirmation details will be shown here -->
-              </div>
-              <button 
-                type="button"
-                onclick="closeBookingModal()"
-                class="btn-primary bg-salon-gold text-white px-8 py-3 rounded-full font-medium hover:bg-salon-charcoal transition-colors duration-300"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </form>
-        
-        <!-- Navigation Buttons -->
-        <div id="booking-navigation" class="flex justify-between mt-8 pt-6 border-t border-gray-200">
-          <button 
-            type="button"
-            id="prev-step-btn"
-            onclick="previousStep()"
-            class="px-6 py-3 border-2 border-gray-300 rounded-full font-medium hover:bg-gray-50 transition-colors duration-200 hidden"
-          >
-            Previous
-          </button>
-          <button 
-            type="button"
-            id="next-step-btn"
-            onclick="nextStep()"
-            class="btn-primary bg-salon-gold text-white px-8 py-3 rounded-full font-medium hover:bg-salon-charcoal transition-colors duration-300 ml-auto"
-          >
-            Continue
-          </button>
-        </div>
+        <!-- Cal.com Iframe -->
+        <iframe 
+          id="cal-iframe"
+          src="https://cal.com/daniel-offer-zk2fzx/30min?overlayCalendar=true" 
+          style="width:100%; height:100%; border:none; opacity: 0; transition: opacity 0.3s ease;"
+          min-height="600px"
+          onload="onIframeLoad()"
+        ></iframe>
       </div>
     </div>
   </div>
