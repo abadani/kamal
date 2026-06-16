@@ -237,7 +237,14 @@ function handleScroll() {
 // ============================================
 window.openBookingModal = function() {
   bookingModal.classList.remove('hidden');
-  
+
+  // Set iframe src from data-src attribute to trigger load
+  const iframe = document.getElementById('cal-iframe');
+  const dataSrc = iframe.getAttribute('data-src');
+  if (dataSrc && iframe.src !== dataSrc) {
+    iframe.src = dataSrc;
+  }
+
   // Animate in
   setTimeout(() => {
     modalBackdrop.classList.remove('opacity-0');
@@ -251,7 +258,7 @@ window.closeBookingModal = function() {
   modalBackdrop.classList.add('opacity-0');
   modalContent.classList.remove('opacity-100', 'scale-100');
   modalContent.classList.add('opacity-0', 'scale-95');
-  
+
   setTimeout(() => {
     bookingModal.classList.add('hidden');
     // Reset iframe for fresh load next time
@@ -263,7 +270,9 @@ window.closeBookingModal = function() {
 window.onIframeLoad = function() {
   const iframe = document.getElementById('cal-iframe');
   const loader = document.getElementById('iframe-loader');
-  
+
+  console.log('Iframe loaded successfully');
+
   // Fade out loader and fade in iframe
   if (loader) {
     loader.style.opacity = '0';
@@ -272,7 +281,7 @@ window.onIframeLoad = function() {
       loader.style.display = 'none';
     }, 300);
   }
-  
+
   if (iframe) {
     iframe.style.opacity = '1';
   }
@@ -282,18 +291,14 @@ window.onIframeLoad = function() {
 function resetIframe() {
   const iframe = document.getElementById('cal-iframe');
   const loader = document.getElementById('iframe-loader');
-  
+
   if (iframe) {
-    // Reset opacity and src to trigger reload on next open
-    iframe.style.opacity = '0';
-    const currentSrc = iframe.src;
+    // Clear src to stop the iframe
     iframe.src = '';
-    // Restore src after a brief delay
-    setTimeout(() => {
-      iframe.src = currentSrc;
-    }, 50);
+    // Reset opacity
+    iframe.style.opacity = '0';
   }
-  
+
   if (loader) {
     loader.style.display = 'flex';
     loader.style.opacity = '1';
